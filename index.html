@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python кодын тексеру</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs/loader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            max-width: 800px;
+            margin: auto;
+        }
+        #editor {
+            height: 300px;
+            border: 1px solid #ccc;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            white-space: pre-wrap; /* Для форматирования вывода */
+        }
+    </style>
+</head>
+<body>
+    <h1>Python кодын тексеру</h1>
+    <div id="editor"></div>
+    <button id="checkButton" style="margin-top: 10px;">Тексеру</button>
+    <div class="response" id="response"></div>
+
+    <script>
+        let pyodide;
+
+        // Загрузка Pyodide при открытии страницы
+        async function loadPyodideAndPackages() {
+            pyodide = await loadPyodide();
+            console.log("Pyodide жүктелді!");
+        }
+        loadPyodideAndPackages();
+
+        // Инициализация Monaco Editor
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs' } });
+        require(['vs/editor/editor.main'], function () {
+            window.editor = monaco.editor.create(document.getElementById('editor'), {
+                value: "# Мұнда Python кодын жазыңыз\nprint('Hello, AI!')",
+                language: "python",
+                theme: "vs-dark"
+            });
+        });
+
+        // Обработчик кнопки "Тексеру"
+        document.getElementById('checkButton').addEventListener('click', async function() {
+            if (!pyodide) {
+                alert("Pyodide әлі жүктелген жоқ, күтіңіз...");
+                return;
+            }
+
+            const code = window.editor.getValue();
+            const responseElement = document.getElementById('response');
+            responseElement.innerText = "Тексерілуде...\n";
+
+            try {
+                let result = await pyodide.runPythonAsync(code);
+                responseElement.innerText = "Шығыс:\n" + result;
+            } catch (error) {
+                responseElement.innerText = "Қате:\n" + error.toString();
+            }
+        });
+    </script>
+</body>
+</html>
