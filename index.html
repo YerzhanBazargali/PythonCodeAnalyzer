@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python кодын тексеру</title>
+    <title>Python кодын бағалау</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs/loader.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.2.0/skulpt.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.2.0/skulpt-stdlib.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -22,25 +23,16 @@
             padding: 10px;
             background: #f0f0f0;
             border-radius: 5px;
-            white-space: pre-wrap;
         }
     </style>
 </head>
 <body>
-    <h1>Python кодын тексеру</h1>
+    <h1>Python кодын бағалау</h1>
     <div id="editor"></div>
-    <button id="checkButton" style="margin-top: 10px;">Тексеру</button>
+    <button id="evaluateButton" style="margin-top: 10px;">Бағалау</button>
     <div class="response" id="response"></div>
 
     <script>
-        let pyodide;
-
-        async function loadPyodideAndPackages() {
-            pyodide = await loadPyodide();
-        }
-
-        loadPyodideAndPackages(); // Загружаем Pyodide при старте страницы
-
         require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs' } });
         require(['vs/editor/editor.main'], function () {
             window.editor = monaco.editor.create(document.getElementById('editor'), {
@@ -50,19 +42,29 @@
             });
         });
 
-        document.getElementById('checkButton').addEventListener('click', async function() {
+        function builtinRead(x) {
+            if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined) {
+                throw "Қате: " + x + " табылмады";
+            }
+            return Sk.builtinFiles["files"][x];
+        }
+
+        document.getElementById('evaluateButton').addEventListener('click', function() {
             const code = window.editor.getValue();
             const responseElement = document.getElementById('response');
-            responseElement.innerText = "Тексерілуде...\n";
-
-            if (!pyodide) {
-                responseElement.innerText = "Қате: Pyodide жүктелмеді!";
-                return;
-            }
-
+            responseElement.innerText = "Бағалануда...";
+            
+            Sk.configure({ output: function(text) { responseElement.innerText += text + "\n"; }, read: builtinRead });
+            responseElement.innerText = "";
+            
             try {
-                let output = await pyodide.runPythonAsync(code);
-                responseElement.innerText = output;
+                Sk.misceval.asyncToPromise(function() {
+                    return Sk.importMainWithBody("__main__", false, code, true);
+                }).then(function() {
+                    responseElement.innerText += "Бағалау: Код сәтті орындалды!";
+                }).catch(function(error) {
+                    responseElement.innerText = "Қате: " + error.toString();
+                });
             } catch (error) {
                 responseElement.innerText = "Қате: " + error.toString();
             }
