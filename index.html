@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Python кодын тексеру</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs/loader.min.js"></script>
-    <script src="https://pyodide-cdn2.iodide.io/v0.25.0/full/pyodide.js"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -22,7 +22,7 @@
             padding: 10px;
             background: #f0f0f0;
             border-radius: 5px;
-            white-space: pre-wrap; /* Для форматирования вывода */
+            white-space: pre-wrap;
         }
     </style>
 </head>
@@ -35,14 +35,12 @@
     <script>
         let pyodide;
 
-        // Загрузка Pyodide при открытии страницы
         async function loadPyodideAndPackages() {
             pyodide = await loadPyodide();
-            console.log("Pyodide жүктелді!");
         }
-        loadPyodideAndPackages();
 
-        // Инициализация Monaco Editor
+        loadPyodideAndPackages(); // Загружаем Pyodide при старте страницы
+
         require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs' } });
         require(['vs/editor/editor.main'], function () {
             window.editor = monaco.editor.create(document.getElementById('editor'), {
@@ -52,22 +50,21 @@
             });
         });
 
-        // Обработчик кнопки "Тексеру"
         document.getElementById('checkButton').addEventListener('click', async function() {
-            if (!pyodide) {
-                alert("Pyodide әлі жүктелген жоқ, күтіңіз...");
-                return;
-            }
-
             const code = window.editor.getValue();
             const responseElement = document.getElementById('response');
             responseElement.innerText = "Тексерілуде...\n";
 
+            if (!pyodide) {
+                responseElement.innerText = "Қате: Pyodide жүктелмеді!";
+                return;
+            }
+
             try {
-                let result = await pyodide.runPythonAsync(code);
-                responseElement.innerText = "Шығыс:\n" + result;
+                let output = await pyodide.runPythonAsync(code);
+                responseElement.innerText = output;
             } catch (error) {
-                responseElement.innerText = "Қате:\n" + error.toString();
+                responseElement.innerText = "Қате: " + error.toString();
             }
         });
     </script>
